@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
+  console.log("✅ req exists:", !!req);
+  console.log("✅ req.cookies:", req.cookies);
   const token = req.cookies?.jwt;
 
   if (!token) {
@@ -11,9 +13,11 @@ export const verifyToken = (req, res, next) => {
     // ✅ verify token using your secret
     const payload = jwt.verify(token, process.env.JWT_KEY);
 
-    // ✅ attach userId directly for consistency
-    req.userId = payload.userId;  
-    req.email = payload.email;
+    // ✅ attach user object for consistency with controllers
+    req.user = {
+      id: payload.id,  // ✅ JWT was created with 'id', not 'userId'
+      email: payload.email
+    };
 
     next();
   } catch (error) {

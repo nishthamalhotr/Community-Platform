@@ -1,6 +1,8 @@
 import { compare } from "bcrypt";
 import User from "../models/Usermodel.js";
 import jwt from "jsonwebtoken";
+import { request, response } from "express";
+import {renameSync,unlinkSync} from "fs";
 
 const maxAge = 3 * 24 * 60 * 60; // 3 days in seconds
 
@@ -131,3 +133,73 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const addProfileImage = async (req, res) => {
+  try {
+    const userId = req.user.id; // ✅ from verifyToken
+    const { firstName, lastName, color } = req.body;
+
+    const userData = await User.findByIdAndUpdate(
+      userId,
+      { firstName, lastName, color, profileSetup: true },
+      { new: true, runValidators: true }
+    );
+
+    if (!userData) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json({
+      id: userData.id,
+      email: userData.email,
+      profileSetup: userData.profileSetup,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      image: userData.image,
+      color: userData.color,
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+export const removeProfileImage = async (req, res) => {
+  try {
+    if(!request.file){
+      return response.status(400).send("File is required.");
+    }
+
+    const date = Date.now();
+    let fileName = "uploads/profiles/" +date +request.file.originalname;
+    renameSync(request.file.path,fileName);
+
+    const updatedUser = await User.findByIdAndUpdate(request.userId,{image:fileName},{new:true,runValidators:true});
+
+
+    return res.status(200).json({
+      
+      image: updatedUser.image,
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+export const logout = async (req, res) => {
+  try {
+    res.cookie("jwt","",{maxAge:1,secure:true,sameSite:"None"});
+    res.status(200).send("Logout Successfull.");
+  } catch (error) {
+    console.error("Update Profile Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+
+

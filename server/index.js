@@ -4,6 +4,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import authRoutes from "./routes/AuthRoutes.js";
+import contactsRoutes from "./routes/ContactRoutes.js";
+import setupSocket from "./socket.js";
 
 dotenv.config();
 
@@ -20,17 +22,23 @@ app.use(
   })
 );
 
+app.use("/uploads/profiles",express.static("uploads/profiles"));
+
 // ✅ Middleware
 app.use(cookieParser());
 app.use(express.json());
 
 // ✅ Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/contacts",contactsRoutes);
 
 // ✅ Start server
 const server = app.listen(port, () => {
   console.log(`🚀 Server is running at http://localhost:${port}`);
 });
+
+
+setupSocket(server)
 
 // ✅ DB connection
 mongoose
