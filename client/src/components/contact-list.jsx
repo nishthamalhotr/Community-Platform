@@ -1,23 +1,33 @@
 import { useAppStore } from "@/store";
 
-const ContactList = ({contacts,isChannel=false}) => {
+const ContactList = ({ contacts, isChannel = false }) => {
+  const {
+    selectedChatData,
+    setSelectedChatData,
+    setSelectedChatType,
+    setSelectedChatMessages,
+  } = useAppStore();
 
-    const {selectedChatData,setSelectedChatData,setSelectedChatType,selectedChatType,setSelectedChatMessages,} = useAppStore();
+  const handleClick = (contact) => {
+    if (isChannel) setSelectedChatType("channel");
+    else setSelectedChatType("contact");
 
-    const handleClick = (contact) =>{
-       if(isChannel) setSelectedChatType("channel");
-        else selectedChatType("contact");
-        setSelectedChatData(contact);
-        if(selectedChatData && selectedChatData._id !== contact._id){
-            setSelectedChatMessages([]);
-        }
+    if (!selectedChatData || selectedChatData._id !== contact._id) {
+      setSelectedChatMessages([]);
     }
+
+    setSelectedChatData(contact);
+  };
+
   return (
-  <div className="mt-5 ">{contacts.map((contacts)=>(
-  <div key={contacts._id}>{contacts._id}</div>
-   ))}
-</div>
-);
+    <div className="mt-5">
+      {contacts.map((contact) => (
+        <div key={contact._id} onClick={() => handleClick(contact)}>
+          {contact._id}
+        </div>
+      ))}
+    </div>
+  );
 };
 
 export default ContactList;

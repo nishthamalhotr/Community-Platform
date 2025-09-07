@@ -1,11 +1,11 @@
+import { request, response } from "express";
 import Message from "../models/MessagesModel.js";
+
+import {mkdirSync, renameSync} from 'fs'
 
 export const getMessages = async (req, res) => {
   try {
-
-    console.log("👉 req.userId:", req.userId);
-    console.log("👉 req.body:", req.body);
-    const user1 = req.id; // ✅ use req, not request
+    const user1 = req.userId; // ✅ use req, not request
     const user2 = req.body.id;
 
     if (!user1 || !user2) {
@@ -26,3 +26,25 @@ export const getMessages = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const uploadFile = async (req, res) => {
+  try {
+    if(!req.file){
+      return res.status(400).send("File is required");
+    }
+
+    const date = Date.now();
+    let fileDir = `uploads/files/${date}`;
+    let fileName = `${fileDir}/${req.file.originalname}`;
+
+
+    mkdirSync(fileDir,{recursive:true});
+    renameSync(req.file.path,fileName);
+    return res.status(200).json({ filePath:fileName });
+  } catch (error) {
+    console.error("Get Messages Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+

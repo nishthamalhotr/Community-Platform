@@ -10,21 +10,19 @@ export const searchContacts = async (req, res) => {
       return res.status(400).json({ error: "Search term is required." });
     }
 
-    // Escape regex special characters
+    // Escape regex special characters safely
     const sanitizedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    // Build regex safely
     const regex = new RegExp(sanitizedSearchTerm, "i");
 
-    // Exclude logged-in user (verifyToken should set req.userId)
+    // Perform search
     const contacts = await User.find({
-      $and: [
-        { _id: { $ne: req.userId } },
-        {
-          $or: [
-            { firstName: regex },
-            { lastName: regex },
-            { email: regex },
-          ],
-        },
+      _id: { $ne: req.userId }, // exclude logged-in user
+      $or: [
+        { firstName: { $regex: regex } },
+        { lastName: { $regex: regex } },
+        { email: { $regex: regex } },
       ],
     }).select("firstName lastName email _id image");
 
@@ -90,6 +88,25 @@ export const getContactsForDMList = async (req, res) => {
     return res.status(200).json({ contacts });
   } catch (error) {
     console.error("Search Contacts Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+export const getAllContacts = async (req, res) => {
+  try {
+       
+    const users = await User.find({_id:{$ne: req.userId}},"firstName lastName _id email");
+
+    const contacts= users.map((user)=>({
+      label: user.firstName ?`${user.firstName} ${user.lastName}`: user.email,
+      value:user._id,
+    }));
+    
+
+    return res.status(200).json({ contacts });
+  } catch (error) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };

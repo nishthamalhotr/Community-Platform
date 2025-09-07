@@ -3,13 +3,15 @@ import ProfileInfo from "./components/profile-info";
 import NewDM from "./components/new-dm";
 import { useEffect } from "react";
 import { apiClient } from "@/lib/api-client";
-import { GET_DM_CONTACTS_ROUTES } from "@/utils/constants";
+import { GET_DM_CONTACTS_ROUTES, GET_USER_CHANNEL_ROUTE } from "@/utils/constants";
 import { useAppStore } from "@/store";
 import ContactList from "@/components/contact-list";
+import CreateChannel from "../create-channel";
+
 
 const ContactsContainer = () => {
 
-  const {setDirectMessagesContacts,directMessagesContacts} = useAppStore();
+  const {setDirectMessagesContacts,directMessagesContacts,channels,setChannels} = useAppStore();
 
   useEffect(()=>{
     const getContacts = async () => {
@@ -17,10 +19,33 @@ const ContactsContainer = () => {
       if(response.data.contacts){
         setDirectMessagesContacts(response.data.contacts);
       }
-    }
+    };
 
-    getContacts()
-  },[])
+    const getChannels = async () => {
+  try {
+    const response = await apiClient.get(GET_USER_CHANNEL_ROUTE, { withCredentials: true });
+    
+    if (response.data.channels) {
+      // Fetch details of each channel to get the channel name
+      const detailedChannels = await Promise.all(
+        response.data.channels.map(async (channelId) => {
+          const response = await apiClient.get(`/channel/${channelId}`, { withCredentials: true });
+          return response.data.channel.name;  // Assuming channel object has a 'name' property
+        })
+      );
+      
+      setChannels(detailedChannels); // Now contains array of channel names instead of IDs
+    }
+  } catch (error) {
+    console.error("Failed to get channels: ", error);
+  }
+};
+
+
+
+    getContacts();
+    getChannels();
+  },[setChannels,setDirectMessagesContacts]);
 
 
   return (
@@ -40,6 +65,10 @@ const ContactsContainer = () => {
         <div className="my-5">
             <div className="flex items-center justify-between pr-10">
                 <Title text="Channels"/>
+                 <CreateChannel/>
+            </div>
+            <div className="max-h-[38vh] overflow-y-auto scrollbar-hidden ">
+              <ContactList contacts={channels} isChannel={true}/>
             </div>
         </div>
         <ProfileInfo/>
